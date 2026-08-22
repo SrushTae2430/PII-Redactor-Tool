@@ -73,6 +73,12 @@ PATTERNS = {
     }
 }
 
+HEADER_EXCLUSIONS = [
+    "INCOME TAX", "DEPARTMENT", "GOVT OF", "GOVERNMENT OF", "INDIA", "PERMANENT ACCOUNT",
+    "NUMBER CARD", "VALID UNLESS", "SIGNATURE OF", "HOLDER", "ISSUING AUTH", "AUTHORITY",
+    "SIGNATURE", "INDIAN OVERSEAS", "DIRECTORY", "CONFIDENTIAL", "REPUBLIC OF INDIA"
+]
+
 def generate_contextual_dummy(entity_type: str, raw_text: str) -> str:
     et = entity_type.upper()
     if et in ["PAN"]:
@@ -126,11 +132,18 @@ def get_default_suggested_action(entity_type: str) -> str:
     else:
         return "label"
 
+def is_header_exclusion(text: str) -> bool:
+    txt_up = text.upper()
+    for excl in HEADER_EXCLUSIONS:
+        if excl in txt_up:
+            return True
+    return False
+
 def analyze_text_for_pii(text: str) -> List[Dict[str, Any]]:
     entities = []
     seen_ranges = set()
 
-    # 1. Key-Value & Form Field Heuristics (Extract values following Name, DOB, Aadhaar, PAN, Email, Phone, Gender)
+    # 1. Key-Value & Form Field Heuristics
     kv_heuristics = [
         (r"(?:Name|नाम|Full Name)\s*[:\-\s]+\s*([A-Za-z\s]{3,35})", "PERSON_NAME", "[NAME]", "Amit Kumar"),
         (r"(?:Father's Name|पिता का नाम)\s*[:\-\s]+\s*([A-Za-z\s]{3,35})", "PERSON_NAME", "[NAME]", "Ramesh Sharma"),
@@ -148,7 +161,7 @@ def analyze_text_for_pii(text: str) -> List[Dict[str, Any]]:
             val_start = match.start(1)
             val_end = match.end(1)
 
-            if not any(abs(val_start - s) < 4 for (s, e) in seen_ranges):
+            if not is_header_exclusion(val_text) and not any(abs(val_start - s) < 4 for (s, e) in seen_ranges):
                 seen_ranges.add((val_start, val_end))
                 suggested = get_default_suggested_action(ent_type)
                 dummy_val = generate_contextual_dummy(ent_type, val_text) or d_val
@@ -169,7 +182,7 @@ def analyze_text_for_pii(text: str) -> List[Dict[str, Any]]:
                     "source": "kv_heuristic"
                 })
 
-    # 2. Presidio Analyzer Integration with score threshold 0.35
+    # 2. Presidio Analyzer Integration
     if presidio_analyzer:
         try:
             results = presidio_analyzer.analyze(text=text, language="en", score_threshold=0.35)
@@ -189,6 +202,9 @@ def analyze_text_for_pii(text: str) -> List[Dict[str, Any]]:
                     ent_type = "DATE_OF_BIRTH"
                 else:
                     ent_type = raw_type
+
+                if is_header_exclusion(matched_text):
+                    continue
 
                 category = "DIRECT" if ent_type in ["PERSON_NAME", "EMAIL", "PHONE_NUMBER", "GOV_ID", "PAN", "AADHAAR"] else "INDIRECT"
                 start, end = res.start, res.end
@@ -228,10 +244,7 @@ def analyze_text_for_pii(text: str) -> List[Dict[str, Any]]:
             start, end = match.start(), match.end()
             matched_str = match.group(0).strip()
 
-            if matched_str.upper() in [
-                "INCOME TAX DEPARTMENT", "GOVERNMENT OF INDIA", "PERMANENT ACCOUNT NUMBER",
-                "INDIAN OVERSEAS", "DIRECTORY", "CONFIDENTIAL", "REPUBLIC OF INDIA"
-            ]:
+            if is_header_exclusion(matched_str):
                 continue
 
             overlap = any(abs(start - s) < 3 and abs(end - e) < 3 for (s, e) in seen_ranges)

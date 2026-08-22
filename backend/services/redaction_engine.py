@@ -25,10 +25,16 @@ def apply_true_redaction(
 
             for ent in page_entities:
                 bbox = ent.get("bbox", [0, 0, 0, 0])
-                # Ensure height is tightly capped to single-line text height (max 22pt)
-                tight_h = min(22.0, max(12.0, float(bbox[3])))
-                rect = fitz.Rect(bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + tight_h)
                 ent_type = ent.get("type", "SENSITIVE")
+                category = ent.get("category", "DIRECT")
+
+                # VISUAL artifacts (photos, QR codes, signatures, stamps) and MANUAL boxes MUST use their full height.
+                # Only cap height for single-line text entities (DIRECT / INDIRECT).
+                if category in ["VISUAL", "MANUAL"] or ent_type in ["PHOTO_ID", "SIGNATURE", "STAMP", "PHOTO"]:
+                    rect = fitz.Rect(float(bbox[0]), float(bbox[1]), float(bbox[0]) + float(bbox[2]), float(bbox[1]) + float(bbox[3]))
+                else:
+                    tight_h = min(24.0, max(12.0, float(bbox[3])))
+                    rect = fitz.Rect(float(bbox[0]), float(bbox[1]), float(bbox[0]) + float(bbox[2]), float(bbox[1]) + tight_h)
 
                 action = ent.get("selected_action") or ent.get("action") or ent.get("suggested_action") or redaction_mode.lower()
 
@@ -36,11 +42,11 @@ def apply_true_redaction(
                     page.add_redact_annot(rect, fill=(0, 0, 0))
                 elif action == "label":
                     replacement_tag = ent.get("label_tag") or get_label_tag(ent_type)
-                    page.add_redact_annot(rect, fill=(1, 1, 1)) # White-out ONLY the tight single-line text bounds
+                    page.add_redact_annot(rect, fill=(1, 1, 1)) # White-out original text bounds
                     text_replacements.append((rect, replacement_tag, (0, 0, 0)))
                 elif action == "dummy":
                     dummy_text = ent.get("dummy_value") or generate_contextual_dummy(ent_type, ent.get("text", ""))
-                    page.add_redact_annot(rect, fill=(1, 1, 1)) # White-out ONLY the tight single-line text bounds
+                    page.add_redact_annot(rect, fill=(1, 1, 1)) # White-out original text bounds
                     text_replacements.append((rect, dummy_text, (0, 0, 0)))
 
             # Permanently purge original underlying text streams and glyphs within exact tight rects
@@ -80,11 +86,16 @@ def apply_true_redaction(
 
         for ent in active_entities:
             bbox = ent.get("bbox", [0, 0, 0, 0])
-            x0, y0 = float(bbox[0]), float(bbox[1])
-            w, h = float(bbox[2]), min(22.0, max(12.0, float(bbox[3])))
-            x1, y1 = x0 + w, y0 + h
             ent_type = ent.get("type", "SENSITIVE")
+            category = ent.get("category", "DIRECT")
 
+            x0, y0 = float(bbox[0]), float(bbox[1])
+            if category in ["VISUAL", "MANUAL"] or ent_type in ["PHOTO_ID", "SIGNATURE", "STAMP", "PHOTO"]:
+                w, h = float(bbox[2]), float(bbox[3])
+            else:
+                w, h = float(bbox[2]), min(24.0, max(12.0, float(bbox[3])))
+
+            x1, y1 = x0 + w, y0 + h
             action = ent.get("selected_action") or ent.get("action") or ent.get("suggested_action") or redaction_mode.lower()
 
             if action == "blackout":
