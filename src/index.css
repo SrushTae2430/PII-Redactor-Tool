@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-border: #E2E8F0;
+  --color-surface-hover: #F1F5F9;
+  --color-navy-900: #0F172A;
+  --color-navy-800: #1E293B;
+  --color-navy-700: #334155;
+  --color-emerald-600: #059669;
+  --color-emerald-500: #10B981;
+  --color-emerald-50: #ECFDF5;
+  --color-indigo-600: #4F46E5;
+  --color-indigo-500: #6366F1;
+  --color-indigo-50: #EEF2FF;
+  --color-danger-500: #EF4444;
+  --color-danger-50: #FEF2F2;
+}
+
+body {
+  background-color: #F8FAFC;
+  color: #0F172A;
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Bounding Box & Interactive Canvas Utilities */
+.bounding-box {
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.bounding-box:hover {
+  outline: 2px solid #4F46E5;
+  z-index: 20;
+}
+
+.bounding-box-direct {
+  background-color: rgba(239, 68, 68, 0.25);
+  border: 1.5px solid #EF4444;
+}
+
+.bounding-box-indirect {
+  background-color: rgba(79, 70, 229, 0.22);
+  border: 1.5px solid #4F46E5;
+}
+
+.bounding-box-visual {
+  background-color: rgba(245, 158, 11, 0.25);
+  border: 1.5px solid #F59E0B;
+}
+
+.bounding-box-manual {
+  background-color: rgba(16, 185, 129, 0.25);
+  border: 1.5px dashed #10B981;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
