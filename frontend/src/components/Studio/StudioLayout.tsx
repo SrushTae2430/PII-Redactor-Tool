@@ -71,6 +71,7 @@ export const StudioLayout: React.FC<StudioLayoutProps> = ({
       active: true,
       action: 'blackout',
       dummy_value: '[REDACTED]',
+      label_tag: '[REDACTED]',
       page: pageNumber
     };
     setEntities((prev) => [...prev, newEntity]);

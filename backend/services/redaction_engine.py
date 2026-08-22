@@ -1,9 +1,8 @@
 import io
 import pymupdf as fitz
-from PIL import Image, ImageDraw, ImageFont
-import base64
+from PIL import Image, ImageDraw
 from typing import Dict, Any, List
-from services.pii_engine import generate_contextual_dummy
+from services.pii_engine import generate_contextual_dummy, get_label_tag
 
 def apply_true_redaction(
     file_bytes: bytes,
@@ -13,12 +12,6 @@ def apply_true_redaction(
     purge_metadata: bool = True,
     canary_token: str = None
 ) -> bytes:
-    """
-    Executes true layout-preserved redaction with support for per-entity granular actions:
-    'blackout' | 'label' | 'dummy'.
-    For 'label' and 'dummy', removes underlying text glyphs cleanly with white fill
-    and inserts replacement text cleanly in-place with matching line font size.
-    """
     ext = filename.split(".")[-1].lower()
 
     if ext == "pdf":
@@ -32,36 +25,38 @@ def apply_true_redaction(
 
             for ent in page_entities:
                 bbox = ent.get("bbox", [0, 0, 0, 0])
-                rect = fitz.Rect(bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3])
+                # Ensure height is tightly capped to single-line text height (max 22pt)
+                tight_h = min(22.0, max(12.0, float(bbox[3])))
+                rect = fitz.Rect(bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + tight_h)
                 ent_type = ent.get("type", "SENSITIVE")
 
-                # Respect per-entity action over global redaction_mode default
-                action = ent.get("action", ent.get("suggested_action", redaction_mode.lower()))
+                action = ent.get("selected_action") or ent.get("action") or ent.get("suggested_action") or redaction_mode.lower()
 
-                if action == "blackout" or redaction_mode == "BLACKOUT" and "action" not in ent:
+                if action == "blackout":
                     page.add_redact_annot(rect, fill=(0, 0, 0))
                 elif action == "label":
-                    replacement_text = f"[{ent_type}]"
-                    page.add_redact_annot(rect, fill=(1, 1, 1)) # White out original text
-                    text_replacements.append((rect, replacement_text, (0, 0, 0)))
+                    replacement_tag = ent.get("label_tag") or get_label_tag(ent_type)
+                    page.add_redact_annot(rect, fill=(1, 1, 1)) # White-out ONLY the tight single-line text bounds
+                    text_replacements.append((rect, replacement_tag, (0, 0, 0)))
                 elif action == "dummy":
                     dummy_text = ent.get("dummy_value") or generate_contextual_dummy(ent_type, ent.get("text", ""))
-                    page.add_redact_annot(rect, fill=(1, 1, 1)) # White out original text
-                    text_replacements.append((rect, dummy_text, (0.05, 0.15, 0.5)))
+                    page.add_redact_annot(rect, fill=(1, 1, 1)) # White-out ONLY the tight single-line text bounds
+                    text_replacements.append((rect, dummy_text, (0, 0, 0)))
 
-            # Permanently purge original underlying text streams and glyphs
+            # Permanently purge original underlying text streams and glyphs within exact tight rects
             page.apply_redactions()
 
             # Insert clean in-place replacement text into white-out bounds
             for rect, text_val, text_color in text_replacements:
-                calc_size = max(7, min(14, rect.height * 0.7))
+                calc_size = max(8, min(12, rect.height * 0.70))
                 try:
                     page.insert_textbox(
                         rect,
                         text_val,
                         fontsize=calc_size,
                         color=text_color,
-                        fontname="helv"
+                        fontname="helv",
+                        align=fitz.TEXT_ALIGN_LEFT
                     )
                 except Exception:
                     pass
@@ -85,21 +80,23 @@ def apply_true_redaction(
 
         for ent in active_entities:
             bbox = ent.get("bbox", [0, 0, 0, 0])
-            x0, y0, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
+            x0, y0 = float(bbox[0]), float(bbox[1])
+            w, h = float(bbox[2]), min(22.0, max(12.0, float(bbox[3])))
             x1, y1 = x0 + w, y0 + h
             ent_type = ent.get("type", "SENSITIVE")
 
-            action = ent.get("action", ent.get("suggested_action", redaction_mode.lower()))
+            action = ent.get("selected_action") or ent.get("action") or ent.get("suggested_action") or redaction_mode.lower()
 
             if action == "blackout":
                 draw.rectangle([x0, y0, x1, y1], fill=(0, 0, 0))
             elif action == "label":
-                draw.rectangle([x0, y0, x1, y1], fill=(245, 245, 245), outline=(200, 200, 200))
-                draw.text((x0 + 3, y0 + 2), f"[{ent_type}]", fill=(0, 0, 0))
+                draw.rectangle([x0, y0, x1, y1], fill=(255, 255, 255))
+                lbl_tag = ent.get("label_tag") or get_label_tag(ent_type)
+                draw.text((x0 + 2, y0 + 2), lbl_tag, fill=(0, 0, 0))
             elif action == "dummy":
+                draw.rectangle([x0, y0, x1, y1], fill=(255, 255, 255))
                 dummy_text = ent.get("dummy_value") or generate_contextual_dummy(ent_type, ent.get("text", ""))
-                draw.rectangle([x0, y0, x1, y1], fill=(240, 246, 255))
-                draw.text((x0 + 3, y0 + 2), dummy_text, fill=(15, 23, 42))
+                draw.text((x0 + 2, y0 + 2), dummy_text, fill=(15, 23, 42))
 
         if canary_token:
             draw.text((20, pil_img.height - 20), f"Confidential Canary: {canary_token}", fill=(128, 128, 128))

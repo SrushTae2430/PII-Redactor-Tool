@@ -32,8 +32,10 @@ export interface PIIEntity {
   confidence: number;
   active: boolean;
   suggested_action?: RedactionAction;
-  action: RedactionAction; // per-entity redaction action ('blackout' | 'label' | 'dummy')
+  action: RedactionAction;
+  selected_action?: RedactionAction;
   dummy_value: string;
+  label_tag: string;
   page?: number;
 }
 
@@ -58,6 +60,9 @@ export interface ProcessedDocument {
     token_hash: string;
     footer_text: string;
   };
+  direct_identifiers?: PIIEntity[];
+  indirect_identifiers?: PIIEntity[];
+  visual_artifacts?: PIIEntity[];
   pages: DocumentPage[];
 }
 

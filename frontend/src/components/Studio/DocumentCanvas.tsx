@@ -43,7 +43,8 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
 
     setIsDrawing(true);
     setDrawStart({ x: clickX, y: clickY });
-    setCurrentDrawBox({ x: clickX, y: clickY, w: 0, h: 0 });
+    // Default manual custom box to standard single-line height (~22px)
+    setCurrentDrawBox({ x: clickX, y: clickY, w: 0, h: 22 });
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -55,13 +56,13 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
     const x = Math.min(drawStart.x, currentX);
     const y = Math.min(drawStart.y, currentY);
     const w = Math.abs(currentX - drawStart.x);
-    const h = Math.abs(currentY - drawStart.y);
+    const h = Math.max(22, Math.abs(currentY - drawStart.y));
 
     setCurrentDrawBox({ x, y, w, h });
   };
 
   const handleMouseUp = () => {
-    if (isDrawing && currentDrawBox && currentDrawBox.w > 15 && currentDrawBox.h > 10) {
+    if (isDrawing && currentDrawBox && currentDrawBox.w > 15) {
       onAddManualEntity(
         [
           Math.round(currentDrawBox.x),
@@ -91,9 +92,9 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
     <main className="flex-1 bg-slate-100 flex flex-col h-full overflow-hidden relative">
       
       {/* Top Floating Control Bar */}
-      <div className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-sm z-30">
+      <div className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-sm z-30 font-sans">
         
-        {/* Left: View Mode Segmented Control */}
+        {/* View Mode Segmented Control */}
         <div className="bg-slate-100 p-1 rounded-xl flex space-x-1 border border-slate-200">
           <button
             onClick={() => setViewMode('REVIEW')}
@@ -115,8 +116,8 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
           </button>
         </div>
 
-        {/* Center: Page Navigation Controls */}
-        <div className="flex items-center space-x-2 text-xs font-semibold text-slate-700">
+        {/* Page Navigation Controls */}
+        <div className="flex items-center space-x-2 text-xs font-semibold text-slate-700 font-mono">
           <button
             disabled={currentPage <= 1}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -134,11 +135,11 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
           </button>
         </div>
 
-        {/* Right: Zoom & Custom Drawing Tip */}
+        {/* Zoom & Tip */}
         <div className="flex items-center space-x-3">
           <div className="hidden lg:flex items-center space-x-1 text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
             <PlusCircle className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Click & Drag to Draw Custom Box</span>
+            <span>Click & Drag to Draw Box</span>
           </div>
 
           <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
@@ -161,7 +162,7 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
       <div
         ref={canvasContainerRef}
         onClick={() => setSelectedEntityId(null)}
-        className="flex-1 overflow-auto p-8 flex justify-center items-start relative select-none"
+        className="flex-1 overflow-auto p-8 flex justify-center items-start relative select-none font-sans"
       >
         {activePageData ? (
           <div
@@ -187,6 +188,8 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
               const isSelected = selectedEntityId === ent.id;
 
               if (!ent.active && viewMode === 'SANITIZED') return null;
+
+              const action = ent.selected_action || ent.action || 'dummy';
 
               return (
                 <div
@@ -214,11 +217,11 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
                   {viewMode === 'REVIEW' && (
                     <>
                       {/* Top Action Pill Badge */}
-                      <span className={`absolute -top-3.5 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center space-x-1 ${
-                        ent.action === 'blackout' ? 'bg-black text-white' : ent.action === 'dummy' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-white'
+                      <span className={`absolute -top-3.5 left-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center space-x-1 ${
+                        action === 'blackout' ? 'bg-black text-white' : action === 'dummy' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-white'
                       }`}>
-                        <span>[{ent.type}]</span>
-                        <span className="opacity-75 font-mono font-normal">({ent.action.toUpperCase()})</span>
+                        <span>{ent.label_tag || `[${ent.type}]`}</span>
+                        <span className="opacity-80 font-mono text-[8px]">({action.toUpperCase()})</span>
                       </span>
 
                       {/* Floating Popover Toolbar on Bounding Box Selection */}
@@ -230,7 +233,7 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
                           <button
                             onClick={() => onSetEntityAction(ent.id, 'blackout')}
                             className={`flex items-center space-x-1 text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
-                              ent.action === 'blackout' ? 'bg-black text-white shadow-sm ring-1 ring-white/30' : 'text-slate-300 hover:bg-navy-800'
+                              action === 'blackout' ? 'bg-black text-white shadow-sm ring-1 ring-white/30' : 'text-slate-300 hover:bg-navy-800'
                             }`}
                           >
                             <Square className="w-3 h-3 text-black fill-current" />
@@ -240,7 +243,7 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
                           <button
                             onClick={() => onSetEntityAction(ent.id, 'label')}
                             className={`flex items-center space-x-1 text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
-                              ent.action === 'label' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-navy-800'
+                              action === 'label' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-300 hover:bg-navy-800'
                             }`}
                           >
                             <Tag className="w-3 h-3 text-indigo-300" />
@@ -250,7 +253,7 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
                           <button
                             onClick={() => onSetEntityAction(ent.id, 'dummy')}
                             className={`flex items-center space-x-1 text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
-                              ent.action === 'dummy' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:bg-navy-800'
+                              action === 'dummy' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:bg-navy-800'
                             }`}
                           >
                             <Sparkles className="w-3 h-3 text-emerald-300" />
@@ -271,19 +274,19 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
                     </>
                   )}
 
-                  {/* SANITIZED PREVIEW MODE: Simultaneous Mixed Action Rendering */}
+                  {/* SANITIZED PREVIEW MODE: Genuine In-Place Text Replacement */}
                   {viewMode === 'SANITIZED' && ent.active && (
-                    <div className="w-full h-full flex items-center justify-center text-center overflow-hidden">
-                      {ent.action === 'blackout' && (
-                        <div className="w-full h-full bg-black rounded-sm border border-black"></div>
+                    <div className="w-full h-full flex items-center justify-start overflow-hidden">
+                      {action === 'blackout' && (
+                        <div className="w-full h-full bg-black rounded-sm"></div>
                       )}
-                      {ent.action === 'label' && (
-                        <div className="w-full h-full bg-slate-100 border border-slate-400 text-[10px] font-mono font-bold text-slate-900 flex items-center justify-center truncate px-1 shadow-sm">
-                          [{ent.type}]
+                      {action === 'label' && (
+                        <div className="w-full h-full bg-white border border-slate-300 text-[10px] font-mono font-bold text-slate-900 flex items-center justify-center truncate px-1 shadow-xs">
+                          {ent.label_tag || `[${ent.type}]`}
                         </div>
                       )}
-                      {ent.action === 'dummy' && (
-                        <div className="w-full h-full bg-blue-50/90 border border-blue-200 text-[11px] font-semibold text-indigo-900 flex items-center justify-center truncate px-1 shadow-sm">
+                      {action === 'dummy' && (
+                        <div className="w-full h-full bg-white text-navy-900 font-sans font-semibold text-[13px] leading-none flex items-center justify-start truncate px-0.5">
                           {ent.dummy_value}
                         </div>
                       )}

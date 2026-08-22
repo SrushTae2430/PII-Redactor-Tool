@@ -159,7 +159,6 @@ function createFallbackProcessedDoc(file: File, options: ProcessingOptions): Pro
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, 612, 792);
     
-    // Header
     ctx.fillStyle = '#0F172A';
     ctx.font = 'bold 18px sans-serif';
     ctx.fillText('INCOME TAX DEPARTMENT / आयकर विभाग', 40, 50);
@@ -179,7 +178,6 @@ function createFallbackProcessedDoc(file: File, options: ProcessingOptions): Pro
     ctx.lineTo(572, 110);
     ctx.stroke();
 
-    // Form fields
     ctx.fillStyle = '#0F172A';
     ctx.font = '14px sans-serif';
     
@@ -210,7 +208,6 @@ function createFallbackProcessedDoc(file: File, options: ProcessingOptions): Pro
     ctx.fillText('Residential Address:', 40, 470);
     ctx.fillText('742 Evergreen Marg, Mumbai, MH', 220, 470);
 
-    // Signature Area
     ctx.strokeStyle = '#94A3B8';
     ctx.strokeRect(40, 530, 220, 75);
     ctx.fillStyle = '#64748B';
@@ -225,7 +222,6 @@ function createFallbackProcessedDoc(file: File, options: ProcessingOptions): Pro
     ctx.quadraticCurveTo(175, 595, 235, 565);
     ctx.stroke();
 
-    // Round Stamp (Circular Seal Only)
     ctx.strokeStyle = '#DC2626';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -239,17 +235,17 @@ function createFallbackProcessedDoc(file: File, options: ProcessingOptions): Pro
   const sampleImgB64 = canvas.toDataURL('image/png');
 
   const defaultEntities: PIIEntity[] = [
-    { id: 'ent_1', text: 'ANUSHREE VIKAS SURVE', type: 'PERSON_NAME', category: 'DIRECT', bbox: [220, 135, 190, 22], confidence: 0.98, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'ROHAN A. DESHMUKH', page: 1 },
-    { id: 'ent_2', text: 'SURVE VIKAS BHASKAR', type: 'PERSON_NAME', category: 'DIRECT', bbox: [220, 175, 180, 22], confidence: 0.96, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'DESHMUKH VIKAS RAHUL', page: 1 },
-    { id: 'ent_3', text: '15/08/1995', type: 'DATE_OF_BIRTH', category: 'INDIRECT', bbox: [220, 215, 100, 22], confidence: 0.97, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: '01/01/2000', page: 1 },
-    { id: 'ent_4', text: 'FEMALE', type: 'GENDER', category: 'INDIRECT', bbox: [220, 255, 80, 22], confidence: 0.95, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'MALE', page: 1 },
-    { id: 'ent_5', text: 'ABCDE1234F', type: 'GOV_ID', category: 'DIRECT', bbox: [220, 295, 110, 22], confidence: 0.99, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'XYZPQ9876K', page: 1 },
-    { id: 'ent_6', text: '9876 5432 1098', type: 'GOV_ID', category: 'DIRECT', bbox: [220, 335, 140, 22], confidence: 0.99, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'XXXX-XXXX-1234', page: 1 },
-    { id: 'ent_7', text: '+1 (555) 019-2834', type: 'PHONE_NUMBER', category: 'DIRECT', bbox: [220, 375, 140, 22], confidence: 0.94, active: true, suggested_action: 'label', action: 'label', dummy_value: '+1-555-0199', page: 1 },
-    { id: 'ent_8', text: 'anushree.surve@corp.in', type: 'EMAIL', category: 'DIRECT', bbox: [220, 415, 175, 22], confidence: 0.98, active: true, suggested_action: 'label', action: 'label', dummy_value: 'user@example.com', page: 1 },
-    { id: 'ent_9', text: '742 Evergreen Marg, Mumbai, MH', type: 'ADDRESS', category: 'INDIRECT', bbox: [220, 455, 240, 22], confidence: 0.90, active: true, suggested_action: 'label', action: 'label', dummy_value: '123 Privacy Marg', page: 1 },
-    { id: 'vis_sig_1', text: '[HOLDER SIGNATURE]', type: 'SIGNATURE', category: 'VISUAL', bbox: [40, 530, 220, 75], confidence: 0.93, active: true, suggested_action: 'blackout', action: 'blackout', dummy_value: '[REDACTED]', page: 1 },
-    { id: 'vis_stamp_1', text: '[ISSUING STAMP]', type: 'STAMP', category: 'VISUAL', bbox: [385, 530, 70, 70], confidence: 0.89, active: true, suggested_action: 'blackout', action: 'blackout', dummy_value: '[REDACTED]', page: 1 }
+    { id: 'ent_1', text: 'ANUSHREE VIKAS SURVE', type: 'PERSON_NAME', category: 'DIRECT', bbox: [220, 135, 190, 22], confidence: 0.98, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'POOJA RAMESH PATIL', label_tag: '[NAME]', page: 1 },
+    { id: 'ent_2', text: 'SURVE VIKAS BHASKAR', type: 'PERSON_NAME', category: 'DIRECT', bbox: [220, 175, 180, 22], confidence: 0.96, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'DESHMUKH VIKAS RAHUL', label_tag: '[NAME]', page: 1 },
+    { id: 'ent_3', text: '15/08/1995', type: 'DATE_OF_BIRTH', category: 'INDIRECT', bbox: [220, 215, 100, 22], confidence: 0.97, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: '15/08/1998', label_tag: '[DOB]', page: 1 },
+    { id: 'ent_4', text: 'FEMALE', type: 'GENDER', category: 'INDIRECT', bbox: [220, 255, 80, 22], confidence: 0.95, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'MALE', label_tag: '[GENDER]', page: 1 },
+    { id: 'ent_5', text: 'ABCDE1234F', type: 'GOV_ID', category: 'DIRECT', bbox: [220, 295, 110, 22], confidence: 0.99, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'XYZPQ9876K', label_tag: '[PAN]', page: 1 },
+    { id: 'ent_6', text: '9876 5432 1098', type: 'GOV_ID', category: 'DIRECT', bbox: [220, 335, 140, 22], confidence: 0.99, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'XXXX-XXXX-1234', label_tag: '[ID_NUM]', page: 1 },
+    { id: 'ent_7', text: '+1 (555) 019-2834', type: 'PHONE_NUMBER', category: 'DIRECT', bbox: [220, 375, 140, 22], confidence: 0.94, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: '98******10', label_tag: '[PHONE]', page: 1 },
+    { id: 'ent_8', text: 'anushree.surve@corp.in', type: 'EMAIL', category: 'DIRECT', bbox: [220, 415, 175, 22], confidence: 0.98, active: true, suggested_action: 'dummy', action: 'dummy', dummy_value: 'xxxxxx@gmail.com', label_tag: '[EMAIL]', page: 1 },
+    { id: 'ent_9', text: '742 Evergreen Marg, Mumbai, MH', type: 'ADDRESS', category: 'INDIRECT', bbox: [220, 455, 240, 22], confidence: 0.90, active: true, suggested_action: 'label', action: 'label', dummy_value: '123 Privacy Marg', label_tag: '[ADDRESS]', page: 1 },
+    { id: 'vis_sig_1', text: '[HOLDER SIGNATURE]', type: 'SIGNATURE', category: 'VISUAL', bbox: [40, 530, 220, 75], confidence: 0.93, active: true, suggested_action: 'blackout', action: 'blackout', dummy_value: '[REDACTED]', label_tag: '[SIGNATURE]', page: 1 },
+    { id: 'vis_stamp_1', text: '[ISSUING STAMP]', type: 'STAMP', category: 'VISUAL', bbox: [385, 530, 70, 70], confidence: 0.89, active: true, suggested_action: 'blackout', action: 'blackout', dummy_value: '[REDACTED]', label_tag: '[STAMP]', page: 1 }
   ];
 
   return {
@@ -269,6 +265,9 @@ function createFallbackProcessedDoc(file: File, options: ProcessingOptions): Pro
       token_hash: '8f94a2b109e',
       footer_text: `Confidential Document Watermark - Tracking ID: CANARY-${Math.floor(1000 + Math.random() * 9000)}-X`
     } : undefined,
+    direct_identifiers: defaultEntities.filter(e => e.category === 'DIRECT'),
+    indirect_identifiers: defaultEntities.filter(e => e.category === 'INDIRECT'),
+    visual_artifacts: defaultEntities.filter(e => e.category === 'VISUAL'),
     pages: [
       {
         page_number: 1,
